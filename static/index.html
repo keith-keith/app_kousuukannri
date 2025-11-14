@@ -1,0 +1,1327 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>工数管理システム</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 10px;
+        }
+
+        .tabs {
+            display: flex;
+            background: #f5f5f5;
+            border-bottom: 3px solid #667eea;
+            overflow-x: auto;
+        }
+
+        .tab {
+            flex: 1;
+            min-width: 120px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s;
+            background: #f5f5f5;
+            border: none;
+            font-size: 16px;
+            font-weight: 600;
+            color: #555;
+        }
+
+        .tab:hover {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .tab.active {
+            background: white;
+            color: #667eea;
+            border-bottom: 3px solid #667eea;
+        }
+
+        .tab-content {
+            display: none;
+            padding: 30px;
+            animation: fadeIn 0.3s;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .form-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        input, select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: border-color 0.3s;
+        }
+
+        input:focus, select:focus, textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 12px 30px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+
+        .card {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 12px;
+            border-left: 4px solid #667eea;
+        }
+
+        .card h3 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .card .value {
+            font-size: 1.8em;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .card .label {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        th, td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid #ddd;
+        }
+
+        th {
+            background: #667eea;
+            color: white;
+            font-weight: 600;
+        }
+
+        tr:hover {
+            background: #f5f5f5;
+        }
+
+        .filter-section {
+            background: #f9f9f9;
+            padding: 20px;
+            border-radius: 12px;
+            margin-bottom: 20px;
+        }
+
+        .view-toggle {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .view-toggle button {
+            flex: 1;
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .view-toggle button.active {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .chat-container {
+            border: 2px solid #ddd;
+            border-radius: 12px;
+            height: 400px;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f9f9f9;
+            margin-bottom: 20px;
+        }
+
+        .message {
+            margin-bottom: 15px;
+            padding: 12px;
+            border-radius: 8px;
+            max-width: 80%;
+        }
+
+        .message.user {
+            background: #667eea;
+            color: white;
+            margin-left: auto;
+        }
+
+        .message.agent {
+            background: white;
+            border: 2px solid #ddd;
+            white-space: pre-wrap;
+            line-height: 1.6;
+        }
+
+        .message.agent strong {
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .chat-input-group {
+            display: flex;
+            gap: 10px;
+        }
+
+        .chat-input-group input {
+            flex: 1;
+        }
+
+        .success-message {
+            background: #4caf50;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .error-message {
+            background: #f44336;
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .loading-message {
+            background: #f0f0f0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .loading-spinner {
+            width: 20px;
+            height: 20px;
+            border: 3px solid #ddd;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .chart-container {
+            position: relative;
+            height: 400px;
+            margin-bottom: 30px;
+            background: white;
+            padding: 20px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+        }
+
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: 1fr;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .chart-title {
+            font-size: 1.2em;
+            font-weight: 600;
+            color: #667eea;
+            margin-bottom: 15px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>工数管理システム</h1>
+            <p>見積・予定・実績工数を一元管理</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab active" onclick="switchTab('register')">案件登録</button>
+            <button class="tab" onclick="switchTab('member-register')">メンバー登録</button>
+            <button class="tab" onclick="switchTab('kousu-input')">工数登録</button>
+            <button class="tab" onclick="switchTab('view')">工数一覧</button>
+            <button class="tab" onclick="switchTab('dashboard')">ダッシュボード</button>
+            <button class="tab" onclick="switchTab('agent')">AIエージェント</button>
+        </div>
+
+        <!-- 案件登録タブ -->
+        <div id="register" class="tab-content active">
+            <h2>案件登録</h2>
+            <div class="success-message" id="project-success">案件を登録しました</div>
+            <div class="form-group">
+                <label>案件名 *</label>
+                <input type="text" id="project-name" placeholder="例: Webサイトリニューアル">
+            </div>
+            <div class="form-group">
+                <label>クライアント</label>
+                <input type="text" id="project-client" placeholder="例: 株式会社ABC">
+            </div>
+            <div class="form-group">
+                <label>説明</label>
+                <textarea id="project-description" rows="4" placeholder="案件の詳細を入力してください"></textarea>
+            </div>
+            <button onclick="addProject()">案件を登録</button>
+        </div>
+
+        <!-- メンバー登録タブ -->
+        <div id="member-register" class="tab-content">
+            <h2>メンバー登録</h2>
+            <div class="success-message" id="member-success">メンバーを登録しました</div>
+            <div class="form-group">
+                <label>メンバー名 *</label>
+                <input type="text" id="member-name" placeholder="例: 山田太郎">
+            </div>
+            <div class="form-group">
+                <label>メールアドレス</label>
+                <input type="email" id="member-email" placeholder="例: yamada@example.com">
+            </div>
+            <button onclick="addMember()">メンバーを登録</button>
+
+            <h3 style="margin-top: 30px; margin-bottom: 15px;">登録済みメンバー</h3>
+            <table id="members-table">
+                <thead>
+                    <tr>
+                        <th>名前</th>
+                        <th>メールアドレス</th>
+                        <th>登録日</th>
+                    </tr>
+                </thead>
+                <tbody id="members-tbody"></tbody>
+            </table>
+        </div>
+
+        <!-- 工数登録タブ -->
+        <div id="kousu-input" class="tab-content">
+            <h2>工数登録</h2>
+            <div class="success-message" id="kousu-success">工数を保存しました</div>
+            <div class="form-group">
+                <label>案件 *</label>
+                <select id="kousu-project"></select>
+            </div>
+            <div class="form-group">
+                <label>担当メンバー（任意）</label>
+                <select id="kousu-member">
+                    <option value="">案件全体（メンバー指定なし）</option>
+                </select>
+            </div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>年 *</label>
+                    <input type="number" id="kousu-year" value="2025" min="2000" max="2100">
+                </div>
+                <div class="form-group">
+                    <label>月 *</label>
+                    <input type="number" id="kousu-month" value="1" min="1" max="12">
+                </div>
+            </div>
+            <div class="grid">
+                <div class="form-group">
+                    <label>見積工数 (時間)</label>
+                    <input type="number" id="estimated-hours" step="0.5" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>予定工数 (時間)</label>
+                    <input type="number" id="planned-hours" step="0.5" value="0" min="0">
+                </div>
+                <div class="form-group">
+                    <label>実績工数 (時間)</label>
+                    <input type="number" id="actual-hours" step="0.5" value="0" min="0">
+                </div>
+            </div>
+            <div class="form-group">
+                <label>備考</label>
+                <textarea id="kousu-notes" rows="3" placeholder="備考を入力してください"></textarea>
+            </div>
+            <button onclick="saveKousu()">工数を保存</button>
+        </div>
+
+        <!-- 工数一覧タブ -->
+        <div id="view" class="tab-content">
+            <h2>工数一覧・集計</h2>
+            <div class="filter-section">
+                <h3>フィルター</h3>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>年</label>
+                        <select id="filter-year" onchange="loadKousuData()">
+                            <option value="">全て</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>月</label>
+                        <select id="filter-month" onchange="loadKousuData()">
+                            <option value="">全て</option>
+                            <option value="1">1月</option>
+                            <option value="2">2月</option>
+                            <option value="3">3月</option>
+                            <option value="4">4月</option>
+                            <option value="5">5月</option>
+                            <option value="6">6月</option>
+                            <option value="7">7月</option>
+                            <option value="8">8月</option>
+                            <option value="9">9月</option>
+                            <option value="10">10月</option>
+                            <option value="11">11月</option>
+                            <option value="12">12月</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="view-toggle">
+                <button class="active" onclick="switchView('detail')">詳細表示</button>
+                <button onclick="switchView('project')">案件単位</button>
+                <button onclick="switchView('member')">メンバー単位</button>
+            </div>
+
+            <div class="grid">
+                <div class="card">
+                    <h3>見積工数合計</h3>
+                    <div class="value" id="total-estimated">0</div>
+                    <div class="label">時間</div>
+                </div>
+                <div class="card">
+                    <h3>予定工数合計</h3>
+                    <div class="value" id="total-planned">0</div>
+                    <div class="label">時間</div>
+                </div>
+                <div class="card">
+                    <h3>実績工数合計</h3>
+                    <div class="value" id="total-actual">0</div>
+                    <div class="label">時間</div>
+                </div>
+            </div>
+
+            <!-- 詳細表示 -->
+            <div id="detail-view">
+                <table id="kousu-table">
+                    <thead>
+                        <tr>
+                            <th>期間</th>
+                            <th>案件名</th>
+                            <th>担当者</th>
+                            <th>クライアント</th>
+                            <th>見積 (h)</th>
+                            <th>予定 (h)</th>
+                            <th>実績 (h)</th>
+                            <th>備考</th>
+                        </tr>
+                    </thead>
+                    <tbody id="kousu-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- 案件単位表示 -->
+            <div id="project-view" style="display:none;">
+                <table id="project-table">
+                    <thead>
+                        <tr>
+                            <th>案件名</th>
+                            <th>クライアント</th>
+                            <th>対象期間</th>
+                            <th>担当メンバー</th>
+                            <th>見積 (h)</th>
+                            <th>予定 (h)</th>
+                            <th>実績 (h)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="project-tbody"></tbody>
+                </table>
+            </div>
+
+            <!-- メンバー単位表示 -->
+            <div id="member-view" style="display:none;">
+                <table id="member-table">
+                    <thead>
+                        <tr>
+                            <th>期間</th>
+                            <th>メンバー名</th>
+                            <th>担当案件</th>
+                            <th>見積 (h)</th>
+                            <th>予定 (h)</th>
+                            <th>実績 (h)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="member-tbody"></tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- ダッシュボードタブ -->
+        <div id="dashboard" class="tab-content">
+            <h2>工数ダッシュボード</h2>
+
+            <div class="filter-section">
+                <h3>表示設定</h3>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>対象年</label>
+                        <select id="dashboard-year" onchange="loadDashboard()">
+                            <option value="">全て</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>グラフタイプ</label>
+                        <select id="chart-type" onchange="loadDashboard()">
+                            <option value="bar">棒グラフ</option>
+                            <option value="line">折れ線グラフ</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="dashboard-grid">
+                <div class="chart-container">
+                    <h3 class="chart-title">案件別工数推移</h3>
+                    <canvas id="projectChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">メンバー別工数推移</h3>
+                    <canvas id="memberChart"></canvas>
+                </div>
+                <div class="chart-container">
+                    <h3 class="chart-title">月次工数サマリー（見積・予定・実績）</h3>
+                    <canvas id="summaryChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- AIエージェントタブ -->
+        <div id="agent" class="tab-content">
+            <h2>AIエージェント - 工数分析・相談</h2>
+            <div class="filter-section">
+                <h3>分析対象期間</h3>
+                <div class="grid">
+                    <div class="form-group">
+                        <label>年</label>
+                        <select id="agent-filter-year">
+                            <option value="">全期間</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>月</label>
+                        <select id="agent-filter-month">
+                            <option value="">全て</option>
+                            <option value="1">1月</option>
+                            <option value="2">2月</option>
+                            <option value="3">3月</option>
+                            <option value="4">4月</option>
+                            <option value="5">5月</option>
+                            <option value="6">6月</option>
+                            <option value="7">7月</option>
+                            <option value="8">8月</option>
+                            <option value="9">9月</option>
+                            <option value="10">10月</option>
+                            <option value="11">11月</option>
+                            <option value="12">12月</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <div class="chat-container" id="chat-messages"></div>
+
+            <div class="chat-input-group">
+                <input type="text" id="chat-input" placeholder="質問を入力してください（例: 予定と実績の差分を分析して）" onkeypress="handleChatKeyPress(event)">
+                <button onclick="sendMessage()">送信</button>
+            </div>
+
+            <div style="margin-top: 20px; padding: 15px; background: #fff3cd; border-radius: 8px;">
+                <strong>使用例:</strong>
+                <ul style="margin-top: 10px; margin-left: 20px;">
+                    <li>この月の工数の傾向を教えて</li>
+                    <li>見積と実績の差分を分析して</li>
+                    <li>工数オーバーしている案件はある?</li>
+                    <li>メンバー別の稼働状況を教えて</li>
+                </ul>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentView = 'detail';
+        let projectChart = null;
+        let memberChart = null;
+        let summaryChart = null;
+
+        // タブ切り替え
+        function switchTab(tabName) {
+            document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+
+            event.target.classList.add('active');
+            document.getElementById(tabName).classList.add('active');
+
+            if (tabName === 'view') {
+                loadKousuData();
+            } else if (tabName === 'kousu-input') {
+                loadProjects();
+                loadMembers();
+            } else if (tabName === 'dashboard') {
+                loadDashboardYears();
+                loadDashboard();
+            } else if (tabName === 'agent') {
+                loadPeriodsForAgent();
+            } else if (tabName === 'member-register') {
+                loadMembersList();
+            }
+        }
+
+        // 表示切り替え
+        function switchView(viewType) {
+            currentView = viewType;
+            document.querySelectorAll('.view-toggle button').forEach(btn => btn.classList.remove('active'));
+            event.target.classList.add('active');
+
+            document.getElementById('detail-view').style.display = viewType === 'detail' ? 'block' : 'none';
+            document.getElementById('project-view').style.display = viewType === 'project' ? 'block' : 'none';
+            document.getElementById('member-view').style.display = viewType === 'member' ? 'block' : 'none';
+
+            loadKousuData();
+        }
+
+        // 案件登録
+        async function addProject() {
+            const name = document.getElementById('project-name').value;
+            if (!name) {
+                alert('案件名を入力してください');
+                return;
+            }
+
+            const data = {
+                name: name,
+                client: document.getElementById('project-client').value,
+                description: document.getElementById('project-description').value
+            };
+
+            const response = await fetch('/api/projects', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                document.getElementById('project-success').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('project-success').style.display = 'none';
+                }, 3000);
+                document.getElementById('project-name').value = '';
+                document.getElementById('project-client').value = '';
+                document.getElementById('project-description').value = '';
+            }
+        }
+
+        // メンバー登録
+        async function addMember() {
+            const name = document.getElementById('member-name').value;
+            if (!name) {
+                alert('メンバー名を入力してください');
+                return;
+            }
+
+            const data = {
+                name: name,
+                email: document.getElementById('member-email').value
+            };
+
+            const response = await fetch('/api/members', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                document.getElementById('member-success').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('member-success').style.display = 'none';
+                }, 3000);
+                document.getElementById('member-name').value = '';
+                document.getElementById('member-email').value = '';
+                loadMembersList();
+            }
+        }
+
+        // メンバーリスト読み込み
+        async function loadMembersList() {
+            const response = await fetch('/api/members');
+            const members = await response.json();
+
+            const tbody = document.getElementById('members-tbody');
+            tbody.innerHTML = '';
+
+            members.forEach(member => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${member.name}</td>
+                    <td>${member.email || '-'}</td>
+                    <td>${member.created_at ? new Date(member.created_at).toLocaleDateString('ja-JP') : '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 案件一覧読み込み
+        async function loadProjects() {
+            const response = await fetch('/api/projects');
+            const projects = await response.json();
+
+            const select = document.getElementById('kousu-project');
+            select.innerHTML = '<option value="">案件を選択してください</option>';
+
+            projects.forEach(project => {
+                const option = document.createElement('option');
+                option.value = project.id;
+                option.textContent = `${project.name}${project.client ? ' - ' + project.client : ''}`;
+                select.appendChild(option);
+            });
+        }
+
+        // メンバー選択肢読み込み
+        async function loadMembers() {
+            const response = await fetch('/api/members');
+            const members = await response.json();
+
+            const select = document.getElementById('kousu-member');
+            select.innerHTML = '<option value="">案件全体（メンバー指定なし）</option>';
+
+            members.forEach(member => {
+                const option = document.createElement('option');
+                option.value = member.id;
+                option.textContent = member.name;
+                select.appendChild(option);
+            });
+        }
+
+        // 工数保存
+        async function saveKousu() {
+            const projectId = document.getElementById('kousu-project').value;
+            if (!projectId) {
+                alert('案件を選択してください');
+                return;
+            }
+
+            const data = {
+                project_id: parseInt(projectId),
+                member_id: document.getElementById('kousu-member').value || null,
+                year: parseInt(document.getElementById('kousu-year').value),
+                month: parseInt(document.getElementById('kousu-month').value),
+                estimated_hours: parseFloat(document.getElementById('estimated-hours').value),
+                planned_hours: parseFloat(document.getElementById('planned-hours').value),
+                actual_hours: parseFloat(document.getElementById('actual-hours').value),
+                notes: document.getElementById('kousu-notes').value
+            };
+
+            const response = await fetch('/api/kousu', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            if (response.ok) {
+                document.getElementById('kousu-success').style.display = 'block';
+                setTimeout(() => {
+                    document.getElementById('kousu-success').style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        // 工数データ読み込み
+        async function loadKousuData() {
+            const year = document.getElementById('filter-year').value;
+            const month = document.getElementById('filter-month').value;
+
+            let url = '/api/kousu/summary?';
+            if (year) url += `year=${year}&`;
+            if (month) url += `month=${month}`;
+
+            const response = await fetch(url);
+            const data = await response.json();
+
+            document.getElementById('total-estimated').textContent = data.total_estimated.toFixed(1);
+            document.getElementById('total-planned').textContent = data.total_planned.toFixed(1);
+            document.getElementById('total-actual').textContent = data.total_actual.toFixed(1);
+
+            if (currentView === 'detail') {
+                loadDetailView(year, month);
+            } else if (currentView === 'project') {
+                loadProjectView(year, month);
+            } else if (currentView === 'member') {
+                loadMemberView(year, month);
+            }
+        }
+
+        // 詳細表示
+        async function loadDetailView(year, month) {
+            let url = '/api/kousu/list?';
+            if (year) url += `year=${year}&`;
+            if (month) url += `month=${month}`;
+
+            const response = await fetch(url);
+            const records = await response.json();
+
+            const tbody = document.getElementById('kousu-tbody');
+            tbody.innerHTML = '';
+
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.year}年${record.month}月</td>
+                    <td>${record.project_name}</td>
+                    <td>${record.member_name || '全体'}</td>
+                    <td>${record.client || '-'}</td>
+                    <td>${record.estimated_hours.toFixed(1)}</td>
+                    <td>${record.planned_hours.toFixed(1)}</td>
+                    <td>${record.actual_hours.toFixed(1)}</td>
+                    <td>${record.notes || '-'}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 案件単位表示
+        async function loadProjectView(year, month) {
+            let url = '/api/kousu/by-project?';
+            if (year) url += `year=${year}&`;
+            if (month) url += `month=${month}`;
+
+            const response = await fetch(url);
+            const records = await response.json();
+
+            const tbody = document.getElementById('project-tbody');
+            tbody.innerHTML = '';
+
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.project_name}</td>
+                    <td>${record.client || '-'}</td>
+                    <td>${record.periods || '-'}</td>
+                    <td>${record.members || '未割当'}</td>
+                    <td>${record.estimated_hours.toFixed(1)}</td>
+                    <td>${record.planned_hours.toFixed(1)}</td>
+                    <td>${record.actual_hours.toFixed(1)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // メンバー単位表示
+        async function loadMemberView(year, month) {
+            let url = '/api/kousu/by-member?';
+            if (year) url += `year=${year}&`;
+            if (month) url += `month=${month}`;
+
+            const response = await fetch(url);
+            const records = await response.json();
+
+            const tbody = document.getElementById('member-tbody');
+            tbody.innerHTML = '';
+
+            records.forEach(record => {
+                const row = document.createElement('tr');
+                row.innerHTML = `
+                    <td>${record.year}年${record.month}月</td>
+                    <td>${record.member_name || '未割当'}</td>
+                    <td>${record.projects || '-'}</td>
+                    <td>${record.estimated_hours.toFixed(1)}</td>
+                    <td>${record.planned_hours.toFixed(1)}</td>
+                    <td>${record.actual_hours.toFixed(1)}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        // 期間データ読み込み
+        async function loadPeriods() {
+            const response = await fetch('/api/periods');
+            const periods = await response.json();
+
+            const yearSelect = document.getElementById('filter-year');
+            const years = [...new Set(periods.map(p => p.year))];
+
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = `${year}年`;
+                yearSelect.appendChild(option);
+            });
+        }
+
+        // エージェント用期間読み込み
+        async function loadPeriodsForAgent() {
+            const response = await fetch('/api/periods');
+            const periods = await response.json();
+
+            const yearSelect = document.getElementById('agent-filter-year');
+            const years = [...new Set(periods.map(p => p.year))];
+
+            yearSelect.innerHTML = '<option value="">全期間</option>';
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = `${year}年`;
+                yearSelect.appendChild(option);
+            });
+        }
+
+        // チャット送信
+        async function sendMessage() {
+            const input = document.getElementById('chat-input');
+            const message = input.value.trim();
+
+            if (!message) return;
+
+            const chatContainer = document.getElementById('chat-messages');
+
+            // ユーザーメッセージ表示
+            const userMsg = document.createElement('div');
+            userMsg.className = 'message user';
+            userMsg.textContent = message;
+            chatContainer.appendChild(userMsg);
+
+            input.value = '';
+
+            // ローディング表示
+            const loadingMsg = document.createElement('div');
+            loadingMsg.className = 'loading-message';
+            loadingMsg.innerHTML = '<div class="loading-spinner"></div><span>AIエージェントが分析中...</span>';
+            chatContainer.appendChild(loadingMsg);
+            chatContainer.scrollTop = chatContainer.scrollHeight;
+
+            // 送信ボタンを無効化
+            const sendButton = event.target;
+            const originalText = sendButton.textContent;
+            sendButton.disabled = true;
+            sendButton.textContent = '処理中...';
+
+            try {
+                // エージェントに送信
+                const year = document.getElementById('agent-filter-year').value;
+                const month = document.getElementById('agent-filter-month').value;
+
+                const response = await fetch('/api/agent/chat', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        message: message,
+                        year: year ? parseInt(year) : null,
+                        month: month ? parseInt(month) : null
+                    })
+                });
+
+                const data = await response.json();
+
+                // ローディング削除
+                loadingMsg.remove();
+
+                // エージェント返答表示
+                const agentMsg = document.createElement('div');
+                agentMsg.className = 'message agent';
+                const formattedResponse = formatMarkdown(data.response || '応答がありませんでした。');
+                agentMsg.innerHTML = formattedResponse;
+                chatContainer.appendChild(agentMsg);
+
+            } catch (error) {
+                // ローディング削除
+                loadingMsg.remove();
+
+                // エラー表示
+                const errorMsg = document.createElement('div');
+                errorMsg.className = 'message agent';
+                errorMsg.style.background = '#ffebee';
+                errorMsg.style.color = '#c62828';
+                errorMsg.textContent = 'エラーが発生しました: ' + error.message;
+                chatContainer.appendChild(errorMsg);
+            } finally {
+                // 送信ボタンを有効化
+                sendButton.disabled = false;
+                sendButton.textContent = originalText;
+                chatContainer.scrollTop = chatContainer.scrollHeight;
+            }
+        }
+
+        function handleChatKeyPress(event) {
+            if (event.key === 'Enter') {
+                sendMessage();
+            }
+        }
+
+        // 簡易マークダウン変換（太字、見出しなど）
+        function formatMarkdown(text) {
+            if (!text) return text;
+
+            // **太字** を <strong>太字</strong> に変換
+            text = text.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+            // ### 見出し を <h3> に変換
+            text = text.replace(/^### (.+)$/gm, '<h3 style="margin-top: 15px; margin-bottom: 10px; color: #667eea;">$1</h3>');
+            text = text.replace(/^## (.+)$/gm, '<h2 style="margin-top: 15px; margin-bottom: 10px; color: #667eea;">$1</h2>');
+            text = text.replace(/^# (.+)$/gm, '<h1 style="margin-top: 15px; margin-bottom: 10px; color: #667eea;">$1</h1>');
+
+            return text;
+        }
+
+        // ダッシュボード用年選択
+        async function loadDashboardYears() {
+            const response = await fetch('/api/periods');
+            const periods = await response.json();
+
+            const yearSelect = document.getElementById('dashboard-year');
+            const years = [...new Set(periods.map(p => p.year))];
+
+            yearSelect.innerHTML = '<option value="">全て</option>';
+            years.forEach(year => {
+                const option = document.createElement('option');
+                option.value = year;
+                option.textContent = `${year}年`;
+                yearSelect.appendChild(option);
+            });
+        }
+
+        // ダッシュボード読み込み
+        async function loadDashboard() {
+            const year = document.getElementById('dashboard-year').value;
+            const chartType = document.getElementById('chart-type').value;
+
+            // データ取得
+            let url = '/api/kousu/list?';
+            if (year) url += `year=${year}`;
+
+            const response = await fetch(url);
+            const records = await response.json();
+
+            if (records.length === 0) {
+                return;
+            }
+
+            // 月ごとにデータを整理
+            const monthlyData = {};
+            records.forEach(record => {
+                const key = `${record.year}/${String(record.month).padStart(2, '0')}`;
+                if (!monthlyData[key]) {
+                    monthlyData[key] = {
+                        projects: {},
+                        members: {},
+                        estimated: 0,
+                        planned: 0,
+                        actual: 0
+                    };
+                }
+
+                // 案件別
+                if (!monthlyData[key].projects[record.project_name]) {
+                    monthlyData[key].projects[record.project_name] = { estimated: 0, planned: 0, actual: 0 };
+                }
+                monthlyData[key].projects[record.project_name].estimated += record.estimated_hours;
+                monthlyData[key].projects[record.project_name].planned += record.planned_hours;
+                monthlyData[key].projects[record.project_name].actual += record.actual_hours;
+
+                // メンバー別
+                const memberName = record.member_name || '未割当';
+                if (!monthlyData[key].members[memberName]) {
+                    monthlyData[key].members[memberName] = { estimated: 0, planned: 0, actual: 0 };
+                }
+                monthlyData[key].members[memberName].estimated += record.estimated_hours;
+                monthlyData[key].members[memberName].planned += record.planned_hours;
+                monthlyData[key].members[memberName].actual += record.actual_hours;
+
+                // 合計
+                monthlyData[key].estimated += record.estimated_hours;
+                monthlyData[key].planned += record.planned_hours;
+                monthlyData[key].actual += record.actual_hours;
+            });
+
+            const months = Object.keys(monthlyData).sort();
+
+            // 案件別グラフ
+            createProjectChart(months, monthlyData, chartType);
+
+            // メンバー別グラフ
+            createMemberChart(months, monthlyData, chartType);
+
+            // サマリーグラフ
+            createSummaryChart(months, monthlyData);
+        }
+
+        function createProjectChart(months, monthlyData, chartType) {
+            const ctx = document.getElementById('projectChart');
+
+            if (projectChart) {
+                projectChart.destroy();
+            }
+
+            // 全案件を取得
+            const allProjects = new Set();
+            months.forEach(month => {
+                Object.keys(monthlyData[month].projects).forEach(proj => allProjects.add(proj));
+            });
+
+            const colors = [
+                'rgba(102, 126, 234, 0.8)',
+                'rgba(118, 75, 162, 0.8)',
+                'rgba(237, 100, 166, 0.8)',
+                'rgba(255, 159, 64, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 205, 86, 0.8)'
+            ];
+
+            const datasets = Array.from(allProjects).map((project, index) => ({
+                label: project,
+                data: months.map(month => monthlyData[month].projects[project]?.actual || 0),
+                backgroundColor: colors[index % colors.length],
+                borderColor: colors[index % colors.length].replace('0.8', '1'),
+                borderWidth: 2
+            }));
+
+            projectChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: months,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '工数 (時間)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createMemberChart(months, monthlyData, chartType) {
+            const ctx = document.getElementById('memberChart');
+
+            if (memberChart) {
+                memberChart.destroy();
+            }
+
+            // 全メンバーを取得
+            const allMembers = new Set();
+            months.forEach(month => {
+                Object.keys(monthlyData[month].members).forEach(member => allMembers.add(member));
+            });
+
+            const colors = [
+                'rgba(54, 162, 235, 0.8)',
+                'rgba(255, 99, 132, 0.8)',
+                'rgba(255, 206, 86, 0.8)',
+                'rgba(75, 192, 192, 0.8)',
+                'rgba(153, 102, 255, 0.8)',
+                'rgba(255, 159, 64, 0.8)',
+                'rgba(199, 199, 199, 0.8)'
+            ];
+
+            const datasets = Array.from(allMembers).map((member, index) => ({
+                label: member,
+                data: months.map(month => monthlyData[month].members[member]?.actual || 0),
+                backgroundColor: colors[index % colors.length],
+                borderColor: colors[index % colors.length].replace('0.8', '1'),
+                borderWidth: 2
+            }));
+
+            memberChart = new Chart(ctx, {
+                type: chartType,
+                data: {
+                    labels: months,
+                    datasets: datasets
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '工数 (時間)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function createSummaryChart(months, monthlyData) {
+            const ctx = document.getElementById('summaryChart');
+
+            if (summaryChart) {
+                summaryChart.destroy();
+            }
+
+            summaryChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: months,
+                    datasets: [
+                        {
+                            label: '見積工数',
+                            data: months.map(month => monthlyData[month].estimated),
+                            backgroundColor: 'rgba(255, 206, 86, 0.2)',
+                            borderColor: 'rgba(255, 206, 86, 1)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: '予定工数',
+                            data: months.map(month => monthlyData[month].planned),
+                            backgroundColor: 'rgba(54, 162, 235, 0.2)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        },
+                        {
+                            label: '実績工数',
+                            data: months.map(month => monthlyData[month].actual),
+                            backgroundColor: 'rgba(255, 99, 132, 0.2)',
+                            borderColor: 'rgba(255, 99, 132, 1)',
+                            borderWidth: 2,
+                            tension: 0.4
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        title: {
+                            display: false
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: '工数 (時間)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // 初期化
+        window.onload = () => {
+            loadPeriods();
+        };
+    </script>
+</body>
+</html>
