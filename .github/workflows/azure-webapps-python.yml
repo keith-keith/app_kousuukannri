@@ -24,6 +24,11 @@ jobs:
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
+      - name: Install dependencies in local directory
+        run: |
+          mkdir -p .python_packages/lib/site-packages
+          pip install --target=.python_packages/lib/site-packages -r requirements.txt
+
       - name: Zip artifact for deployment
         run: zip -r release.zip . -x ".git/*" ".github/*" "venv/*" "antenv/*" "__pycache__/*" "*.pyc" "app_logs*/*" "webapp_logs*/*" "deployment*.zip" "azure_logs*/*"
 
